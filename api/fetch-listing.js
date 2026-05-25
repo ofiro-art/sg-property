@@ -4,159 +4,72 @@ export default async function handler(req) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get('url');
 
-  if (!url) {
-    return new Response(JSON.stringify({ error: 'No URL provided' }), {
-      status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
-  }
+  const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
 
-  // Only allow PropertyGuru and 99.co
+  if (!url) return new Response(JSON.stringify({ error: 'No URL' }), { status: 400, headers });
+
   const allowed = ['propertyguru.com.sg', '99.co'];
-  const isAllowed = allowed.some(d => url.includes(d));
-  if (!isAllowed) {
-    return new Response(JSON.stringify({ error: 'Only PropertyGuru and 99.co are supported' }), {
-      status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
+  if (!allowed.some(d => url.includes(d)))
+    return new Response(JSON.stringify({ error: 'Only PropertyGuru and 99.co supported' }), { status: 400, headers });
+
+  const source = url.includes('propertyguru') ? 'PropertyGuru' : '99.co';
+  const slug = decodeURIComponent(url).toLowerCase();
+
+  // ── Rooms ──────────────────────────────────────────────────────
+  let rooms = 3;
+  const roomM = slug.match(/(\d+)-bed(?:room)?s?/) || slug.match(/(\d+)br/) || slug.match(/(\d+)-bedrooms?/);
+  if (roomM) rooms = parseFloat(roomM[1]);
+
+  // ── Type ───────────────────────────────────────────────────────
+  let type = 'Condo';
+  if (/\bhdb\b/.test(slug))                               type = 'HDB';
+  else if (/landed|terrace|bungalow|semi-det/.test(slug)) type = 'Landed';
+  else if (/studio/.test(slug))                           type = 'Studio';
+  else if (/serviced/.test(slug))                         type = 'Serviced Apt';
+
+  // ── Property name from slug ────────────────────────────────────
+  let clean = '';
+  if (url.includes('propertyguru')) {
+    clean = slug.replace(/.*\/listing\//, '').replace(/^for-(?:rent|sale)-/, '')
+      .replace(/-\d{6,}$/, '').replace(/-\d+-bedrooms?.*$/, '').replace(/-\d+-(?:bedroom|room).*$/, '');
+  } else {
+    clean = slug.replace(/.*\/rentals?\//, '').replace(/.*\/property\//, '')
+      .replace(/-\d{5,}$/, '').replace(/-\d+-bedrooms?.*$/, '');
   }
+  const noise = new Set(['the','a','at','in','on','of','and','for','to','by','with','near','no','new','d','s','singapore','rent','sale']);
+  const nameParts = clean.split('-').filter(w => w.length > 1 && !noise.has(w) && isNaN(w));
+  const propertyName = nameParts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const title = propertyName ? `${rooms}BR ${type} at ${propertyName}` : `${rooms}BR ${type} · Singapore`;
 
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-SG,en;q=0.9',
-      }
-    });
-
-    const html = await res.text();
-
-    // Extract structured data from PropertyGuru / 99.co
-    const extract = (html, url) => {
-      const isPG = url.includes('propertyguru');
-
-      const get = (patterns) => {
-        for (const p of patterns) {
-          const m = html.match(p);
-          if (m) return m[1]?.trim();
-        }
-        return null;
-      };
-
-      // Title
-      const title = get([
-        /<h1[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)</i,
-        /<h1[^>]*>([^<]{10,100})</i,
-        /<title>([^|<]{10,80})/i,
-        /"name"\s*:\s*"([^"]{10,100})"/,
-      ]) || 'Singapore Property';
-
-      // Price
-      const priceRaw = get([
-        /\$\s*([\d,]+)\s*(?:\/\s*mo|per month|\/month)/i,
-        /"price"\s*:\s*"?\$?\s*([\d,]+)/,
-        /listing[_-]?price[^>]*>\s*\$?\s*([\d,]+)/i,
-        /S\$\s*([\d,]+)/,
-        /([\d,]{4,7})\s*\/\s*(?:mo|month)/i,
-      ]);
-      const price = priceRaw ? parseInt(priceRaw.replace(/,/g, '')) : 0;
-
-      // Bedrooms
-      const roomsRaw = get([
-        /(\d+(?:\.\d)?)\s*(?:Bed(?:room)?s?|BR)\b/i,
-        /"bedroom[s]?"\s*:\s*"?(\d+)/i,
-        /bedrooms?[^>]*>\s*(\d+)/i,
-      ]);
-      const rooms = roomsRaw ? parseFloat(roomsRaw) : 3;
-
-      // Bathrooms
-      const bathsRaw = get([
-        /(\d+)\s*(?:Bath(?:room)?s?|toilet)\b/i,
-        /"bathroom[s]?"\s*:\s*"?(\d+)/i,
-      ]);
-      const baths = bathsRaw ? parseInt(bathsRaw) : 2;
-
-      // Size
-      const sizeRaw = get([
-        /([\d,]+)\s*(?:sqft|sq\.?\s*ft|square feet)/i,
-        /"floor[_-]?area"\s*:\s*"?([\d,]+)/i,
-      ]);
-      const size = sizeRaw ? parseInt(sizeRaw.replace(/,/g, '')) : 0;
-
-      // Floor
-      const floorRaw = get([
-        /(?:floor|level|storey)\s*:?\s*(\d+)/i,
-        /#(\d+)[\-\/]\d+/,
-        /"floor[^"]*"\s*:\s*"?(\d+)/i,
-      ]);
-      const floor = floorRaw ? parseInt(floorRaw) : '-';
-
-      // Address
-      const address = get([
-        /"streetAddress"\s*:\s*"([^"]+)"/,
-        /"address"\s*:\s*"([^"]+)"/,
-        /class="[^"]*address[^"]*"[^>]*>([^<]{5,80})</i,
-        /property[_-]?address[^>]*>([^<]{5,80})</i,
-      ]) || '';
-
-      // District
-      const distM = (address + html).match(/\b(D\d{2}|District\s*\d{1,2})\b/i);
-      const district = distM ? distM[1].toUpperCase().replace('DISTRICT ', 'D0') : '';
-      const fullAddress = address + (district && !address.includes(district) ? ', ' + district : '');
-
-      // Property type
-      const typeRaw = get([
-        /"propertyType"\s*:\s*"([^"]+)"/i,
-        /property[_-]?type[^>]*>([^<]{3,30})</i,
-      ]);
-      let type = 'Condo';
-      if (typeRaw) {
-        if (/hdb/i.test(typeRaw)) type = 'HDB';
-        else if (/land/i.test(typeRaw)) type = 'Landed';
-        else if (/studio/i.test(typeRaw)) type = 'Studio';
-        else if (/serviced/i.test(typeRaw)) type = 'Serviced Apt';
-      } else if (/\bhdb\b/i.test(html)) type = 'HDB';
-
-      // Furnishing
-      let furnishing = 'Fully Furnished';
-      if (/unfurnish/i.test(html)) furnishing = 'Unfurnished';
-      else if (/partial/i.test(html)) furnishing = 'Partially Furnished';
-
-      // MRT
-      const mrtM = html.match(/([A-Z][a-zA-Z\s]+MRT)[^\n<]*?(\d+\s*min(?:utes?)?)?/);
-      const mrt = mrtM ? mrtM[1].trim() + (mrtM[2] ? ' · ' + mrtM[2].trim() : '') : '—';
-
-      // Available
-      let available = 'Immediate';
-      const avM = html.match(/available\s*(?:from|:)?\s*([A-Z][a-z]+\s+\d{4}|\d+\s+[A-Z][a-z]+\s+\d{4})/i);
-      if (avM) available = avM[1];
-
-      // Tags
-      const tagPatterns = {
-        'Pool': /\bpool\b/i, 'Gym': /\bgym\b/i, 'BBQ': /\bbbq\b/i,
-        'Playground': /\bplayground\b/i, 'Security': /\bsecurity\b|\bguard\b/i,
-        'Balcony': /\bbalcon/i, 'Sea View': /sea view/i, 'City View': /city view/i,
-        'Carpark': /\bcarpark\b|\bparking\b/i, 'Pet Friendly': /\bpet\b/i,
-        'Near MRT': /near mrt|\bwalk.*mrt\b/i, 'Air Con': /air[\s-]?con/i,
-      };
-      const tags = Object.entries(tagPatterns)
-        .filter(([, re]) => re.test(html))
-        .map(([t]) => t)
-        .slice(0, 5);
-
-      return { title: title.replace(/\s+/g, ' '), address: fullAddress, price, type, rooms, baths, size, floor, mrt, available, furnishing, tags };
-    };
-
-    const data = extract(html, url);
-    const source = url.includes('propertyguru') ? 'PropertyGuru' : '99.co';
-
-    return new Response(JSON.stringify({ ...data, source, ok: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
-
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
+  // ── District ───────────────────────────────────────────────────
+  const distM = slug.match(/\bd(\d{2})\b/) || slug.match(/district-(\d{1,2})/);
+  let district = distM ? `D${distM[1].padStart(2,'0')}` : '';
+  const knownDistricts = {
+    'orchard':'D09','newton':'D11','novena':'D11','bukit-timah':'D10','holland':'D10',
+    'tanglin':'D10','river-valley':'D09','robertson':'D09','tanjong-pagar':'D02',
+    'raffles':'D01','marina':'D01','sentosa':'D04','east-coast':'D15','katong':'D15',
+    'bedok':'D16','tampines':'D18','punggol':'D19','sengkang':'D19','hougang':'D19',
+    'bishan':'D20','ang-mo-kio':'D20','clementi':'D05','jurong':'D22','woodlands':'D25',
+    'yishun':'D27','buona-vista':'D05','one-north':'D05','queenstown':'D03',
+    'commonwealth':'D03','tiong-bahru':'D03','kallang':'D12','geylang':'D14',
+    'pasir-ris':'D18','serangoon':'D19','little-india':'D08','bugis':'D07',
+    'chinatown':'D02','alexandra':'D03','high-point':'D10','great-world':'D09',
+  };
+  if (!district) {
+    for (const [name, d] of Object.entries(knownDistricts)) {
+      if (slug.includes(name)) { district = d; break; }
+    }
   }
+  const address = propertyName
+    ? `${propertyName}${district ? ', ' + district : ''}, Singapore`
+    : `Singapore${district ? ' ' + district : ''}`;
+
+  const data = {
+    title, address, price: 0, type, rooms,
+    baths: rooms >= 4 ? 3 : rooms >= 3 ? 2 : 1,
+    size: 0, floor: '-', mrt: '—', available: 'Immediate',
+    furnishing: 'Fully Furnished', tags: [], source, ok: true,
+  };
+
+  return new Response(JSON.stringify(data), { status: 200, headers });
 }
