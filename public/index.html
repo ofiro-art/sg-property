@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>SG Property Hunt</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#0a0a0a;font-family:'Inter',sans-serif;color:#fff;overflow:hidden;}
+#app{max-width:430px;height:100dvh;margin:0 auto;display:flex;flex-direction:column;background:#0a0a0a;position:relative;}
+::-webkit-scrollbar{display:none;}
+.topbar{background:#111;border-bottom:1px solid #222;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:18px;font-weight:800;}
+.topbar-sub{font-size:11px;color:#555;margin-top:1px;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.nav{display:flex;background:#111;border-top:1px solid #222;flex-shrink:0;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 12px;background:none;border:none;cursor:pointer;}
+.nav-btn:active{background:#1a1a1a;}
+.nav-icon{font-size:24px;line-height:1;}
+.nav-label{font-size:10px;font-weight:600;color:#555;}
+.nav-btn.on .nav-label{color:#60a5fa;}
+.card{background:#161616;border:1px solid #222;border-radius:16px;padding:16px;margin-bottom:12px;}
+.prop{background:#161616;border:1px solid #222;border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;}
+.prop:active{background:#1e1e1e;}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:99px;font-size:11px;font-weight:700;padding:4px 10px;border:1px solid;}
+.btn{border:none;border-radius:12px;font-family:'Inter',sans-serif;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn:active{opacity:.8;transform:scale(.97);}
+.btn-primary{background:#2563eb;color:#fff;padding:14px;font-size:15px;width:100%;}
+.btn-ghost{background:#1e1e1e;color:#888;border:1px solid #2a2a2a;padding:10px 16px;font-size:13px;}
+.btn-danger{background:#2a0a0a;color:#ef4444;border:1px solid #4a1a1a;padding:10px 16px;font-size:13px;}
+.btn-sm{padding:8px 14px;font-size:13px;}
+.btn-green{background:#14532d;color:#4ade80;padding:14px;font-size:15px;width:100%;font-weight:700;border-radius:12px;border:none;cursor:pointer;}
+.input{background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#fff;font-family:'Inter',sans-serif;font-size:15px;padding:12px 14px;width:100%;}
+.input:focus{outline:none;border-color:#2563eb;}
+textarea.input{resize:none;}
+select.input{-webkit-appearance:none;}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;}
+.chip{background:#1a1a1a;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;color:#777;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;}
+.chip.on{background:#1e3a6e;color:#60a5fa;}
+.chip:active{opacity:.8;}
+.tag{background:#1a1a1a;border-radius:6px;font-size:11px;color:#666;padding:3px 8px;}
+.section-title{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat{background:#161616;border:1px solid #222;border-radius:14px;padding:14px 10px;text-align:center;}
+.stat-icon{font-size:22px;margin-bottom:6px;}
+.stat-val{font-size:24px;font-weight:800;}
+.stat-label{font-size:11px;color:#555;margin-top:2px;}
+.sheet-wrap{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end;max-width:430px;margin:0 auto;}
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);}
+.sheet{position:relative;background:#111;border-radius:20px 20px 0 0;border-top:1px solid #222;padding:20px 16px 32px;max-height:90vh;overflow-y:auto;}
+.sheet-handle{width:36px;height:4px;background:#333;border-radius:99px;margin:0 auto 18px;}
+.detail-header{background:#111;border-bottom:1px solid #222;padding:14px 16px;flex-shrink:0;}
+.back-btn{background:none;border:none;color:#60a5fa;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;padding:0;margin-bottom:12px;display:flex;align-items:center;gap:4px;}
+.viewing-card{background:#161616;border:1px solid #222;border-radius:14px;padding:14px;margin-bottom:10px;}
+.date-box{border-radius:12px;padding:10px 14px;text-align:center;min-width:52px;flex-shrink:0;}
+.date-num{font-size:22px;font-weight:800;line-height:1;}
+.date-mon{font-size:10px;margin-top:1px;}
+.wf-btn{width:100%;border-radius:12px;padding:13px 16px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border:1px solid;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;}
+.wf-btn:active{opacity:.8;}
+.stage-section{margin-bottom:20px;}
+.stage-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.stage-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.req-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #1a1a1a;}
+.req-row:last-child{border-bottom:none;}
+.req-label{font-size:13px;color:#888;}
+.req-val{font-size:15px;font-weight:700;text-align:right;}
+.row{display:flex;align-items:center;gap:10px;}
+.pulse{animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.spin{animation:spin 1s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade{animation:fade .2s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.empty{text-align:center;padding:48px 20px;color:#444;}
+
+/* ── AI IMPORT ── */
+.ai-box{background:#0d1f3c;border:1px solid #1e3a6e;border-radius:16px;padding:16px;margin-bottom:16px;}
+.ai-title{font-size:14px;font-weight:700;color:#60a5fa;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ai-status{background:#0a0a0a;border-radius:10px;padding:12px;font-size:13px;color:#888;min-height:48px;line-height:1.5;margin-top:8px;white-space:pre-wrap;}
+.ai-status.loading{color:#60a5fa;}
+.ai-status.success{color:#4ade80;}
+.ai-status.error{color:#ef4444;}
+.ai-field{margin-bottom:8px;}
+.ai-field label{font-size:11px;color:#555;display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.preview-card{background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:14px;margin-top:12px;}
+.preview-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #1a1a1a;}
+.preview-row:last-child{border:none;}
+.preview-key{color:#666;}
+.preview-val{color:#fff;font-weight:600;text-align:right;max-width:60%;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ─── STAGES ───────────────────────────────────────────────────────
+const STAGES={
+  new:               {label:"New",            color:"#64748b",emoji:"🆕"},
+  shortlisted:       {label:"Shortlisted",    color:"#3b82f6",emoji:"⭐"},
+  viewing_scheduled: {label:"Viewing Booked", color:"#f59e0b",emoji:"📅"},
+  visited:           {label:"Visited",        color:"#8b5cf6",emoji:"👁"},
+  second_viewing:    {label:"2nd Viewing",    color:"#f97316",emoji:"🔁"},
+  interested:        {label:"Interested",     color:"#06b6d4",emoji:"💙"},
+  negotiating:       {label:"Negotiating",    color:"#eab308",emoji:"🤝"},
+  offer_made:        {label:"Offer Made",     color:"#22d3ee",emoji:"📨"},
+  approved:          {label:"Approved ✓",     color:"#22c55e",emoji:"✅"},
+  rejected:          {label:"Not Suitable",   color:"#ef4444",emoji:"✗"},
+};
+const NEXT={
+  new:["shortlisted","rejected"],shortlisted:["viewing_scheduled","rejected"],
+  viewing_scheduled:["visited","rejected"],visited:["interested","second_viewing","rejected"],
+  second_viewing:["interested","rejected"],interested:["negotiating","rejected"],
+  negotiating:["offer_made","rejected"],offer_made:["approved","rejected"],
+  approved:[],rejected:[],
+};
+
+// ─── STATE ────────────────────────────────────────────────────────
+let S={
+  tab:"home",detailId:null,filterStatus:"all",sortBy:"date",
+  showPending:false,showImport:false,syncing:false,
+  noteEditing:null,noteText:"",
+  viewingNote:{id:null,text:""},
+  newViewing:{date:"",time:"",who:"both"},
+  importUrl:"",importStatus:"",importStatusType:"",importPreview:null,
+  listings:[
+    {id:"L1",source:"PropertyGuru",title:"3BR Orchard Residences",address:"1 Orchard Blvd, D09",rooms:3,baths:2,size:1250,price:6800,floor:18,furnishing:"Fully Furnished",mrt:"Orchard MRT · 3 min",available:"Immediate",emoji:"🏙",tags:["Pool","Gym","Security"],status:"interested",added:"2026-05-20",agentNote:"Landlord flexible on price.",myNote:"Loved the view. Noisy on weekends."},
+    {id:"L2",source:"PropertyGuru",title:"Modern 2BR Near Bugis",address:"88 Middle Rd, D07",rooms:2,baths:2,size:900,price:4200,floor:8,furnishing:"Partially Furnished",mrt:"Bugis MRT · 5 min",available:"1 Jun 2026",emoji:"🌆",tags:["Gym","BBQ"],status:"shortlisted",added:"2026-05-19",agentNote:"Owner wants 12-month min.",myNote:""},
+    {id:"L3",source:"99.co",title:"4BR Family Home Bishan",address:"22 Bishan St 11, D20",rooms:4,baths:2,size:1400,price:3500,floor:6,furnishing:"Unfurnished",mrt:"Bishan MRT · 8 min",available:"15 Jun 2026",emoji:"🏘",tags:["Near School","Large Kitchen"],status:"shortlisted",added:"2026-05-18",agentNote:"Very motivated owner.",myNote:""},
+    {id:"L4",source:"PropertyGuru",title:"Loft Studio Tanjong Pagar",address:"5 Neil Rd, D02",rooms:1,baths:1,size:520,price:2900,floor:3,furnishing:"Fully Furnished",mrt:"Tanjong Pagar MRT · 4 min",available:"Immediate",emoji:"🏢",tags:["City View","Rooftop"],status:"rejected",added:"2026-05-17",agentNote:"",myNote:"Too small, street noise."},
+    {id:"L5",source:"99.co",title:"3BR East Coast Sea View",address:"101 Meyer Rd, D15",rooms:3,baths:2,size:1180,price:5600,floor:12,furnishing:"Fully Furnished",mrt:"Katong Park MRT · 6 min",available:"1 Jul 2026",emoji:"🌊",tags:["Sea View","Pool","Tennis"],status:"negotiating",added:"2026-05-16",agentNote:"Price negotiable 5–10%.",myNote:"Stunning views. Kitchen compact."},
+    {id:"L6",source:"99.co",title:"Luxe 3BR Sentosa Cove",address:"18 Ocean Drive, D04",rooms:3,baths:3,size:1600,price:9500,floor:5,furnishing:"Fully Furnished",mrt:"HarbourFront MRT · 15 min",available:"1 Jun 2026",emoji:"🏝",tags:["Marina View","Infinity Pool"],status:"shortlisted",added:"2026-05-14",agentNote:"Premium unit.",myNote:""},
+    {id:"L7",source:"PropertyGuru",title:"3BR Newton Residences",address:"3 Newton Rd, D11",rooms:3,baths:2,size:1100,price:5200,floor:10,furnishing:"Partially Furnished",mrt:"Newton MRT · 2 min",available:"Immediate",emoji:"🌳",tags:["Walk to MRT","Pool"],status:"new",added:"2026-05-22",agentNote:"Just listed.",myNote:""},
+  ],
+  pending:[
+    {id:"P1",source:"PropertyGuru",title:"3BR Holland Village",address:"10 Holland Ave, D10",rooms:3,baths:2,size:1050,price:5900,floor:9,furnishing:"Fully Furnished",mrt:"Holland Village MRT · 4 min",available:"1 Jun 2026",emoji:"🌿",tags:["Cafes","Pool","Garden"]},
+    {id:"P2",source:"99.co",title:"4BR Punggol Waterway",address:"36 Punggol Walk, D19",rooms:4,baths:2,size:1380,price:2800,floor:12,furnishing:"Unfurnished",mrt:"Punggol MRT · 5 min",available:"Immediate",emoji:"💧",tags:["Waterway View","Family-Friendly"]},
+  ],
+  viewings:[
+    {id:1,lid:"L1",title:"3BR Orchard Residences",date:"2026-05-24",time:"15:30",status:"upcoming",notes:"",who:"both"},
+    {id:2,lid:"L5",title:"3BR East Coast Sea View",date:"2026-05-21",time:"11:00",status:"completed",notes:"Stunning sea view. Kitchen compact. Landlord open to negotiate.",who:"both"},
+    {id:3,lid:"L4",title:"Loft Studio Tanjong Pagar",date:"2026-05-18",time:"14:00",status:"completed",notes:"Too small. Street noise from Neil Rd.",who:"both"},
+  ],
+  req:{budgetMin:2500,budgetMax:6500,roomsMin:2,roomsMax:4,sizeMin:700,sizeMax:1500,
+    districts:["D09","D10","D11","D15","D05"],types:["Condo","HDB"],
+    notes:"Prefer high floor, natural light, ≥2 bathrooms. Near MRT and good food.",editing:false},
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const fmt=n=>"S$"+Number(n).toLocaleString();
+const fmtDW=d=>new Date(d).toLocaleDateString("en-SG",{weekday:"short",day:"numeric",month:"short"});
+const active=()=>S.listings.filter(l=>l.status!=="rejected");
+const upcomingV=()=>S.viewings.filter(v=>v.status==="upcoming").sort((a,b)=>new Date(a.date)-new Date(b.date));
+const pastV=()=>S.viewings.filter(v=>v.status==="completed");
+const detail=()=>S.listings.find(l=>l.id===S.detailId);
+
+function pill(status){
+  const s=STAGES[status]||STAGES.new;
+  return`<span class="pill" style="color:${s.color};border-color:${s.color}44;background:${s.color}18">${s.emoji} ${s.label}</span>`;
+}
+function srcBadge(src){
+  const isPG=src==="PropertyGuru";
+  return`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${isPG?"#0c1a38":"#160d30"};color:${isPG?"#60a5fa":"#a78bfa"}">${isPG?"PG":"99.co"}</span>`;
+}
+function tags(arr){return(arr||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join(" ");}
+function emojiForType(type){
+  if(!type) return"🏠";
+  const t=type.toLowerCase();
+  if(t.includes("condo"))return"🏙";
+  if(t.includes("hdb"))return"🏘";
+  if(t.includes("landed"))return"🏡";
+  if(t.includes("studio"))return"🏢";
+  if(t.includes("sentosa"))return"🏝";
+  return"🏠";
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────
+function render(){
+  $("app").innerHTML=
+    `<div style="display:flex;flex-direction:column;height:100dvh;">
+      ${S.tab==="listings"&&S.detailId?renderDetailHeader():renderTopbar()}
+      <div class="scroll fade" style="flex:1;padding:12px 14px 16px;">${renderScreen()}</div>
+      ${renderNav()}
+      ${S.showPending?renderPendingSheet():""}
+      ${S.showImport?renderImportSheet():""}
+    </div>`;
+}
+
+function renderTopbar(){
+  const titles={home:"🇸🇬 Property Hunt",listings:"Listings",viewings:"Calendar",pipeline:"Pipeline",requirements:"My Search"};
+  const isHome=S.tab==="home";
+  return`<div class="topbar">
+    <div>
+      <div class="topbar-title">${titles[S.tab]||""}</div>
+      ${isHome?`<div class="topbar-sub">PropertyGuru · 99.co · Agent</div>`:""}
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      ${S.pending.length>0?`<button style="background:#1a3a1a;border:1px solid #2a5a2a;border-radius:10px;color:#4ade80;font-size:12px;font-weight:700;padding:7px 12px;cursor:pointer;" class="pulse" onclick="openPending()">● ${S.pending.length} New</button>`:""}
+      ${S.tab==="listings"&&!S.detailId?`<button style="background:#0d1f3c;border:1px solid #1e3a6e;border-radius:10px;color:#60a5fa;font-size:13px;font-weight:700;padding:7px 12px;cursor:pointer;" onclick="openImport()">+ Add</button>`:""}
+      ${isHome?`<button style="background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;color:#60a5fa;font-size:18px;padding:7px 11px;cursor:pointer;" onclick="doSync()"><span id="si" class="${S.syncing?"spin":""}">↻</span></button>`:""}
+    </div>
+  </div>`;
+}
+
+function renderDetailHeader(){
+  const apt=detail(); if(!apt) return"";
+  return`<div class="detail-header">
+    <button class="back-btn" onclick="closeDetail()">‹ Back</button>
+    <div class="row" style="align-items:flex-start;gap:10px;">
+      <div style="font-size:36px;">${apt.emoji}</div>
+      <div style="flex:1;">
+        <div style="font-size:17px;font-weight:800;line-height:1.3;margin-bottom:3px;">${apt.title}</div>
+        <div style="font-size:12px;color:#555;">${apt.address}</div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">${pill(apt.status)} ${srcBadge(apt.source)}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:24px;font-weight:800;color:#4ade80;">${fmt(apt.price)}</div>
+        <div style="font-size:11px;color:#555;">/month</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNav(){
+  const tabs=[{id:"home",icon:"🏠",label:"Home"},{id:"listings",icon:"🏢",label:"Listings"},{id:"viewings",icon:"📅",label:"Calendar"},{id:"pipeline",icon:"📊",label:"Pipeline"},{id:"requirements",icon:"⚙️",label:"Search"}];
+  return`<div class="nav">${tabs.map(t=>`<button class="nav-btn ${S.tab===t.id?"on":""}" onclick="goTab('${t.id}')"><div class="nav-icon">${t.icon}</div><div class="nav-label">${t.label}</div></button>`).join("")}</div>`;
+}
+
+function renderScreen(){
+  if(S.tab==="listings"&&S.detailId) return renderDetail();
+  if(S.tab==="home")         return renderHome();
+  if(S.tab==="listings")     return renderListings();
+  if(S.tab==="viewings")     return renderViewings();
+  if(S.tab==="pipeline")     return renderPipeline();
+  if(S.tab==="requirements") return renderRequirements();
+  return"";
+}
+
+// ── HOME ──────────────────────────────────────────────────────────
+function renderHome(){
+  const act=active();
+  const hot=S.listings.filter(l=>["negotiating","offer_made","interested"].includes(l.status));
+  const nv=upcomingV()[0];
+  const nvP=nv?S.listings.find(l=>l.id===nv.lid):null;
+  return`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-icon">🏠</div><div class="stat-val" style="color:#60a5fa;">${act.length}</div><div class="stat-label">Listings</div></div>
+    <div class="stat"><div class="stat-icon">📅</div><div class="stat-val" style="color:#a78bfa;">${pastV().length}</div><div class="stat-label">Visited</div></div>
+    <div class="stat"><div class="stat-icon">🔥</div><div class="stat-val" style="color:#4ade80;">${hot.length}</div><div class="stat-label">Hot</div></div>
+  </div>
+  ${nv?`<div class="card" style="background:#0d1f3c;border-color:#1e3a6e;cursor:pointer;margin-bottom:14px;" onclick="goTab('viewings')">
+    <div class="section-title" style="margin-bottom:10px;">NEXT VIEWING</div>
+    <div class="row">
+      <div class="date-box" style="background:#1d4ed8;">
+        <div class="date-num">${new Date(nv.date).getDate()}</div>
+        <div class="date-mon" style="color:rgba(255,255,255,.6);">${new Date(nv.date).toLocaleDateString("en-SG",{month:"short"})}</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:15px;margin-bottom:3px;">${nv.title}</div>
+        <div style="font-size:12px;color:#6090c0;">⏰ ${nv.time} · ${nv.who==="both"?"Client + Agent":nv.who}</div>
+        ${nvP?`<div style="font-size:13px;font-weight:700;color:#4ade80;margin-top:4px;">${fmt(nvP.price)}/mo</div>`:""}
+      </div>
+      <div style="color:#555;font-size:20px;">›</div>
+    </div>
+  </div>`:""}
+  ${hot.length>0?`<div class="section-title">🔥 HOT LEADS</div>
+  ${hot.map(apt=>`<div class="prop" onclick="openDetail('${apt.id}')">
+    <div class="row" style="margin-bottom:8px;"><div style="font-size:28px;">${apt.emoji}</div>
+    <div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:2px;">${apt.title}</div>
+    <div style="font-size:12px;color:#555;">${apt.address}</div></div>${pill(apt.status)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;gap:10px;font-size:12px;color:#666;"><span>🛏 ${apt.rooms}BR</span><span>📐 ${apt.size}sqft</span></div>
+      <div style="font-size:20px;font-weight:800;color:#4ade80;">${fmt(apt.price)}</div>
+    </div>
+  </div>`).join("")}`:""}
+  <div class="card" style="margin-top:4px;">
+    <div class="section-title">MY SEARCH CRITERIA</div>
+    <div class="req-row"><span class="req-label">Budget</span><span class="req-val" style="color:#4ade80;">${fmt(S.req.budgetMin)} – ${fmt(S.req.budgetMax)}/mo</span></div>
+    <div class="req-row"><span class="req-label">Bedrooms</span><span class="req-val">${S.req.roomsMin}–${S.req.roomsMax} BR</span></div>
+    <div class="req-row"><span class="req-label">Size</span><span class="req-val">${S.req.sizeMin}–${S.req.sizeMax} sqft</span></div>
+    <div class="req-row" style="border:none;"><span class="req-label">Districts</span><span class="req-val" style="font-size:12px;color:#888;">${S.req.districts.join(" · ")}</span></div>
+  </div>`;
+}
+
+// ── LISTINGS ──────────────────────────────────────────────────────
+function renderListings(){
+  const act=active();
+  let filtered=act.filter(l=>S.filterStatus==="all"||l.status===S.filterStatus);
+  if(S.sortBy==="price_asc")  filtered.sort((a,b)=>a.price-b.price);
+  if(S.sortBy==="price_desc") filtered.sort((a,b)=>b.price-a.price);
+  if(S.sortBy==="size")       filtered.sort((a,b)=>b.size-a.size);
+  if(S.sortBy==="date")       filtered.sort((a,b)=>new Date(b.added)-new Date(a.added));
+  const statuses=["all","shortlisted","viewing_scheduled","visited","interested","negotiating","approved"];
+  return`
+  <div class="chips" style="margin-bottom:10px;">
+    ${statuses.map(s=>{const cnt=s==="all"?act.length:act.filter(l=>l.status===s).length;if(s!=="all"&&cnt===0)return"";return`<button class="chip ${S.filterStatus===s?"on":""}" onclick="setFilter('${s}')">${s==="all"?"All ("+act.length+")":STAGES[s].label+" ("+cnt+")"}</button>`;}).join("")}
+  </div>
+  <div class="chips" style="margin-bottom:14px;">
+    ${[["date","Recent"],["price_asc","Price ↑"],["price_desc","Price ↓"],["size","Size"]].map(([k,l])=>`<button class="chip ${S.sortBy===k?"on":""}" onclick="setSort('${k}')">${l}</button>`).join("")}
+  </div>
+  ${filtered.length===0?`<div class="empty"><div style="font-size:40px;margin-bottom:10px;">🔍</div>No listings here</div>`:""}
+  ${filtered.map(apt=>`<div class="prop" onclick="openDetail('${apt.id}')">
+    <div class="row" style="margin-bottom:10px;">
+      <div style="font-size:30px;">${apt.emoji}</div>
+      <div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:2px;line-height:1.3;">${apt.title}</div>
+      <div style="font-size:12px;color:#555;">${apt.address}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">${pill(apt.status)}${srcBadge(apt.source)}</div>
+    </div>
+    <div style="display:flex;gap:12px;font-size:12px;color:#666;margin-bottom:10px;"><span>🛏 ${apt.rooms}BR</span><span>🚿 ${apt.baths}</span><span>📐 ${apt.size}sqft</span><span>🏗 Fl.${apt.floor}</span></div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">${tags(apt.tags)}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #222;padding-top:10px;">
+      <div style="font-size:11px;color:#555;">${apt.mrt}</div>
+      <div style="font-size:20px;font-weight:800;color:#4ade80;">${fmt(apt.price)}<span style="font-size:12px;color:#555;">/mo</span></div>
+    </div>
+  </div>`).join("")}`;
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────
+function renderDetail(){
+  const apt=detail(); if(!apt) return"";
+  const propV=S.viewings.filter(v=>v.lid===apt.id);
+  const nextStages=NEXT[apt.status]||[];
+  const nv=S.newViewing;
+  return`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+    ${[["🛏",apt.rooms+"BR","Beds"],["🚿",apt.baths,"Bath"],["📐",apt.size,"sqft"],["🏗","Fl."+apt.floor,"Floor"]].map(([ic,v,l])=>`<div class="stat" style="padding:12px 8px;"><div style="font-size:18px;margin-bottom:4px;">${ic}</div><div style="font-size:14px;font-weight:700;color:#90b8f0;">${v}</div><div style="font-size:10px;color:#555;">${l}</div></div>`).join("")}
+  </div>
+  <div style="display:flex;gap:10px;font-size:12px;color:#666;margin-bottom:14px;flex-wrap:wrap;"><span>🚇 ${apt.mrt}</span><span>🪑 ${apt.furnishing}</span><span>📅 ${apt.available}</span></div>
+  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px;">${(apt.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+  ${nextStages.length>0?`<div class="card" style="margin-bottom:12px;"><div class="section-title">UPDATE STATUS</div>
+  ${nextStages.map(next=>{const s=STAGES[next];return`<button class="wf-btn" onclick="updateStatus('${apt.id}','${next}')" style="background:${s.color}14;color:${s.color};border-color:${s.color}44;"><span style="font-size:18px;">${s.emoji}</span> → ${s.label}</button>`;}).join("")}</div>`:""}
+  ${apt.agentNote?`<div class="card" style="margin-bottom:12px;border-color:#1e3a6e;"><div class="section-title">AGENT NOTE</div><div style="font-size:14px;color:#7090b8;line-height:1.6;border-left:3px solid #2563eb;padding-left:10px;">${apt.agentNote}</div></div>`:""}
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div class="section-title" style="margin:0;">MY NOTES</div><button onclick="startNote('${apt.id}')" style="background:none;border:none;color:#60a5fa;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">✏ Edit</button></div>
+    ${S.noteEditing===apt.id?`<textarea id="nt" class="input" rows="3" placeholder="Your observations...">${S.noteText}</textarea><div style="display:flex;gap:8px;margin-top:10px;"><button class="btn btn-primary" style="font-size:13px;padding:10px;" onclick="saveNote('${apt.id}')">Save</button><button class="btn btn-ghost btn-sm" onclick="cancelNote()">Cancel</button></div>`:`<div style="font-size:14px;color:${apt.myNote?"#888":"#333"};line-height:1.6;font-style:${apt.myNote?"normal":"italic"};">${apt.myNote||"No notes yet."}</div>`}
+  </div>
+  <div class="card" style="margin-bottom:12px;"><div class="section-title">BOOK VIEWING</div>
+    <input type="date" class="input" value="${nv.date}" onchange="setNV('date',this.value)" style="margin-bottom:8px;"/>
+    <input type="time" class="input" value="${nv.time}" onchange="setNV('time',this.value)" style="margin-bottom:8px;"/>
+    <select class="input" onchange="setNV('who',this.value)" style="margin-bottom:12px;"><option value="both" ${nv.who==="both"?"selected":""}>Client + Agent</option><option value="agent" ${nv.who==="agent"?"selected":""}>Agent Only</option><option value="client" ${nv.who==="client"?"selected":""}>Client Only</option></select>
+    <button class="btn btn-primary" onclick="addViewing('${apt.id}')">📅 Book Viewing</button>
+  </div>
+  ${propV.length>0?`<div class="card"><div class="section-title">VIEWING HISTORY</div>${propV.map(v=>`<div style="background:#0d0d0d;border-radius:10px;padding:12px;margin-bottom:8px;"><div class="row" style="margin-bottom:${v.notes?8:0}px;"><div style="font-size:13px;font-weight:600;flex:1;">${fmtDW(v.date)} · ${v.time}</div><span style="font-size:10px;background:${v.status==="completed"?"#0a2010":"#1a2410"};color:${v.status==="completed"?"#4ade80":"#a3e635"};padding:2px 8px;border-radius:99px;">${v.status}</span></div>${v.notes?`<div style="font-size:12px;color:#666;line-height:1.6;">${v.notes}</div>`:""}${v.status==="upcoming"&&S.viewingNote.id!==v.id?`<button onclick="startVNote(${v.id})" style="background:none;border:1px solid #222;border-radius:8px;color:#666;font-size:12px;padding:6px 12px;margin-top:8px;cursor:pointer;font-family:'Inter',sans-serif;">+ Add post-visit notes</button>`:""}${S.viewingNote.id===v.id?`<textarea id="vnt" class="input" rows="3" placeholder="Notes after the visit..." style="margin-top:8px;">${S.viewingNote.text}</textarea><div style="display:flex;gap:8px;margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="saveVNote(${v.id})">Save</button><button class="btn btn-ghost btn-sm" onclick="cancelVNote()">Cancel</button></div>`:""}  </div>`).join("")}</div>`:""}`;
+}
+
+// ── VIEWINGS ──────────────────────────────────────────────────────
+function renderViewings(){
+  const up=upcomingV(),past=pastV();
+  return`
+  <div class="section-title">UPCOMING</div>
+  ${up.length===0?`<div style="color:#444;font-size:14px;margin-bottom:20px;">No upcoming viewings.</div>`:""}
+  ${up.map(v=>{const p=S.listings.find(l=>l.id===v.lid);return`<div class="viewing-card"><div class="row"><div class="date-box" style="background:#1d4ed8;"><div class="date-num">${new Date(v.date).getDate()}</div><div class="date-mon" style="color:rgba(255,255,255,.6);">${new Date(v.date).toLocaleDateString("en-SG",{month:"short"})}</div></div><div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:3px;">${v.title}</div><div style="font-size:12px;color:#666;">⏰ ${v.time}</div><div style="font-size:12px;color:#666;">👤 ${v.who==="both"?"Client + Agent":v.who==="agent"?"Agent Only":"Client Only"}</div>${p?`<div style="font-size:13px;font-weight:700;color:#4ade80;margin-top:4px;">${fmt(p.price)}/mo</div>`:""}</div></div></div>`;}).join("")}
+  <div class="section-title" style="margin-top:8px;">COMPLETED</div>
+  ${past.map(v=>{const p=S.listings.find(l=>l.id===v.lid);return`<div class="viewing-card"><div class="row" style="margin-bottom:${v.notes?10:0}px;"><div class="date-box" style="background:#1e1040;"><div class="date-num" style="color:#a78bfa;">${new Date(v.date).getDate()}</div><div class="date-mon" style="color:#6040a0;">${new Date(v.date).toLocaleDateString("en-SG",{month:"short"})}</div></div><div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:3px;">${v.title}</div><div style="font-size:12px;color:#666;">⏰ ${v.time}</div>${p?pill(p.status):""}</div></div>${v.notes?`<div style="font-size:13px;color:#666;line-height:1.6;border-left:3px solid #444;padding-left:10px;">${v.notes}</div>`:""}</div>`;}).join("")}`;
+}
+
+// ── PIPELINE ──────────────────────────────────────────────────────
+function renderPipeline(){
+  const stages=["shortlisted","viewing_scheduled","visited","interested","negotiating","offer_made","approved"];
+  const rejected=S.listings.filter(l=>l.status==="rejected");
+  return`
+  <div class="stats-row" style="margin-bottom:20px;">
+    <div class="stat"><div class="stat-icon">🏠</div><div class="stat-val" style="color:#60a5fa;">${active().length}</div><div class="stat-label">Active</div></div>
+    <div class="stat"><div class="stat-icon">👁</div><div class="stat-val" style="color:#a78bfa;">${pastV().length}</div><div class="stat-label">Visited</div></div>
+    <div class="stat"><div class="stat-icon">✗</div><div class="stat-val" style="color:#ef4444;">${rejected.length}</div><div class="stat-label">Rejected</div></div>
+  </div>
+  ${stages.map(stage=>{const s=STAGES[stage];const items=S.listings.filter(l=>l.status===stage);return`<div class="stage-section"><div class="stage-header"><div class="stage-dot" style="background:${s.color};"></div><div style="font-size:14px;font-weight:700;color:${s.color};">${s.label}</div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${s.color}18;color:${s.color};">${items.length}</span></div>${items.length===0?`<div style="color:#333;font-size:13px;">—</div>`:""}${items.map(apt=>`<div class="prop" style="margin-bottom:8px;" onclick="openDetail('${apt.id}')"><div class="row"><div style="font-size:26px;">${apt.emoji}</div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${apt.title}</div><div style="font-size:12px;color:#555;">${apt.rooms}BR · ${apt.size}sqft</div></div><div style="font-size:18px;font-weight:800;color:#4ade80;">${fmt(apt.price)}</div></div></div>`).join("")}</div>`;}).join("")}
+  ${rejected.length>0?`<div class="stage-section"><div class="stage-header"><div class="stage-dot" style="background:#ef4444;"></div><div style="font-size:14px;font-weight:700;color:#ef4444;">Not Suitable</div><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ef444418;color:#ef4444;">${rejected.length}</span></div>${rejected.map(apt=>`<div style="background:#140808;border:1px solid #2a1010;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;"><div style="font-size:22px;">${apt.emoji}</div><div style="flex:1;"><div style="font-size:13px;color:#6a3030;font-weight:600;">${apt.title}</div><div style="font-size:11px;color:#3a1a1a;">${apt.myNote||"Not suitable"}</div></div><button onclick="updateStatus('${apt.id}','shortlisted')" style="background:#1f0808;border:1px solid #3f1010;border-radius:8px;color:#ef4444;font-size:12px;padding:6px 10px;cursor:pointer;font-family:'Inter',sans-serif;">↺</button></div>`).join("")}</div>`:""}`;
+}
+
+// ── REQUIREMENTS ──────────────────────────────────────────────────
+function renderRequirements(){
+  const r=S.req;
+  const DIST=["D01","D02","D03","D04","D05","D07","D08","D09","D10","D11","D15","D19","D20","D23"];
+  const TYPES=["Condo","HDB","Landed","Serviced Apt","Studio"];
+  return`
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px;"><button class="btn btn-ghost btn-sm" onclick="toggleReqEdit()">${r.editing?"✓ Done":"✏ Edit"}</button></div>
+  <div class="card" style="margin-bottom:12px;"><div class="section-title">MONTHLY BUDGET (SGD)</div>${r.editing?`<div style="display:flex;gap:8px;"><div style="flex:1;"><div style="font-size:11px;color:#555;margin-bottom:5px;">Min</div><input type="number" class="input" value="${r.budgetMin}" oninput="setR('budgetMin',+this.value)"/></div><div style="flex:1;"><div style="font-size:11px;color:#555;margin-bottom:5px;">Max</div><input type="number" class="input" value="${r.budgetMax}" oninput="setR('budgetMax',+this.value)"/></div></div>`:`<div style="font-size:26px;font-weight:800;color:#4ade80;">${fmt(r.budgetMin)} – ${fmt(r.budgetMax)}</div><div style="font-size:12px;color:#555;margin-top:3px;">per month</div>`}</div>
+  <div class="card" style="margin-bottom:12px;"><div class="section-title">BEDROOMS & SIZE</div>${r.editing?`<div style="display:flex;flex-direction:column;gap:8px;"><div style="display:flex;gap:8px;"><input type="number" class="input" placeholder="Min BR" value="${r.roomsMin}" oninput="setR('roomsMin',+this.value)"/><input type="number" class="input" placeholder="Max BR" value="${r.roomsMax}" oninput="setR('roomsMax',+this.value)"/></div><div style="display:flex;gap:8px;"><input type="number" class="input" placeholder="Min sqft" value="${r.sizeMin}" oninput="setR('sizeMin',+this.value)"/><input type="number" class="input" placeholder="Max sqft" value="${r.sizeMax}" oninput="setR('sizeMax',+this.value)"/></div></div>`:`<div style="display:flex;gap:20px;"><div><div style="font-size:22px;font-weight:800;color:#60a5fa;">${r.roomsMin}–${r.roomsMax} BR</div><div style="font-size:11px;color:#555;">bedrooms</div></div><div style="width:1px;background:#222;"></div><div><div style="font-size:22px;font-weight:800;color:#60a5fa;">${r.sizeMin}–${r.sizeMax}</div><div style="font-size:11px;color:#555;">sqft</div></div></div>`}</div>
+  <div class="card" style="margin-bottom:12px;"><div class="section-title">DISTRICTS</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${DIST.map(d=>`<button class="chip ${r.districts.includes(d)?"on":""}" onclick="toggleD('${d}')">${d}</button>`).join("")}</div></div>
+  <div class="card" style="margin-bottom:12px;"><div class="section-title">PROPERTY TYPE</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${TYPES.map(t=>`<button class="chip ${r.types.includes(t)?"on":""}" onclick="toggleT('${t}')">${t}</button>`).join("")}</div></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div class="section-title" style="margin:0;">AGENT NOTES</div></div>${r.editing?`<textarea class="input" rows="4" oninput="setR('notes',this.value)">${r.notes}</textarea>`:`<div style="font-size:14px;color:#888;line-height:1.7;border-left:3px solid #2563eb;padding-left:12px;">${r.notes}</div>`}</div>`;
+}
+
+// ── PENDING SHEET ─────────────────────────────────────────────────
+function renderPendingSheet(){
+  return`<div class="sheet-wrap"><div class="sheet-bg" onclick="closePending()"></div><div class="sheet"><div class="sheet-handle"></div><div style="font-size:18px;font-weight:800;color:#4ade80;margin-bottom:4px;">🔔 ${S.pending.length} New Matches!</div><div style="font-size:13px;color:#555;margin-bottom:18px;">These listings match your criteria.</div>${S.pending.map(apt=>`<div class="card" style="margin-bottom:12px;"><div class="row" style="margin-bottom:10px;"><div style="font-size:30px;">${apt.emoji}</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:2px;">${apt.title}</div><div style="font-size:12px;color:#555;">${apt.address}</div></div><div style="font-size:20px;font-weight:800;color:#4ade80;flex-shrink:0;">${fmt(apt.price)}</div></div><div style="display:flex;gap:10px;font-size:12px;color:#666;margin-bottom:10px;"><span>🛏 ${apt.rooms}BR</span><span>📐 ${apt.size}sqft</span></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">${(apt.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")} ${srcBadge(apt.source)}</div><div style="display:flex;gap:8px;"><button class="btn-green" style="font-size:14px;padding:11px;" onclick="addToList('${apt.id}')">+ Add to My List</button><button class="btn btn-danger btn-sm" onclick="skipPending('${apt.id}')">Skip</button></div></div>`).join("")}</div></div>`;
+}
+
+// ── AI IMPORT SHEET ───────────────────────────────────────────────
+function renderImportSheet(){
+  const p=S.importPreview;
+  const mode=S.importMode||"url";
+  const isLoading=S.importStatus==="loading";
+  return`<div class="sheet-wrap"><div class="sheet-bg" onclick="closeImport()"></div><div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="font-size:18px;font-weight:800;color:#60a5fa;margin-bottom:4px;">✨ Add Listing</div>
+    <div style="font-size:13px;color:#555;margin-bottom:16px;">Paste a link from PropertyGuru or 99.co</div>
+
+    <div style="display:flex;gap:6px;margin-bottom:16px;">
+      <button class="chip ${mode==='url'?'on':''}" onclick="S.importMode='url';S.importPreview=null;S.importStatus='';render()">🔗 Paste Link</button>
+      <button class="chip ${mode==='manual'?'on':''}" onclick="S.importMode='manual';S.importPreview=null;S.importStatus='';render()">✏️ Manual Entry</button>
+    </div>
+
+    ${mode==='url'?`
+    <div class="ai-box">
+      <div class="ai-title">🔗 How it works</div>
+      <div style="font-size:12px;color:#6090c0;line-height:1.8;margin-bottom:14px;">
+        1️⃣ Open the listing in PropertyGuru or 99.co<br/>
+        2️⃣ Copy the link from the address bar<br/>
+        3️⃣ Paste below and tap <strong style="color:#fff;">Fetch Details</strong>
+      </div>
+      <div style="font-size:11px;color:#555;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Listing URL</div>
+      <input id="importUrlInput" type="url" class="input"
+        placeholder="https://www.propertyguru.com.sg/listing/..."
+        value="${S.importUrl||''}"
+        oninput="S.importUrl=this.value"
+        style="margin-bottom:10px;font-size:14px;"/>
+      <button class="btn btn-primary" onclick="runUrlImport()" ${isLoading?"disabled":""}>
+        ${isLoading?'<span class="spin" style="display:inline-block;">⏳</span>  Fetching listing...':"🔍 Fetch Details"}
+      </button>
+      ${S.importStatus&&!isLoading?`<div class="ai-status ${S.importStatusType}" style="margin-top:10px;">${S.importStatus}</div>`:""}
+    </div>`:`
+    <div>
+      ${["Title","Address","Price (SGD/mo)","Bedrooms","Bathrooms","Size (sqft)","Floor","MRT nearby","Available","Furnishing"].map((label,i)=>{
+        const keys=["title","address","price","rooms","baths","size","floor","mrt","available","furnishing"];
+        const k=keys[i]; const nums=["price","rooms","baths","size","floor"]; const m=S.manual||{};
+        return`<div style="margin-bottom:10px;"><div style="font-size:11px;color:#555;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">${label}</div>
+        <input type="${nums.includes(k)?'number':'text'}" class="input" value="${m[k]||''}" placeholder="${label}" oninput="setManual('${k}',this.value)"/></div>`;
+      }).join("")}
+      <div style="margin-bottom:14px;"><div style="font-size:11px;color:#555;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Source</div>
+      <select class="input" onchange="setManual('source',this.value)"><option value="PropertyGuru">PropertyGuru</option><option value="99.co">99.co</option><option value="Agent">Agent</option></select></div>
+      <button class="btn-green" onclick="confirmManual()">+ Add Listing</button>
+    </div>`}
+
+    ${p?`
+    <div style="font-size:13px;font-weight:700;color:#4ade80;margin:16px 0 10px;">✅ Fetched — check and confirm:</div>
+    <div class="preview-card">
+      <div class="preview-row"><span class="preview-key">Title</span><span class="preview-val">${p.title}</span></div>
+      <div class="preview-row"><span class="preview-key">Address</span><span class="preview-val">${p.address||'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Price</span><span class="preview-val" style="color:#4ade80;">${p.price?fmt(p.price)+"<span style='font-size:11px;color:#555;'>/mo</span>":'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Type</span><span class="preview-val">${p.type||'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Bedrooms</span><span class="preview-val">${p.rooms}BR / ${p.baths}Bath</span></div>
+      <div class="preview-row"><span class="preview-key">Size</span><span class="preview-val">${p.size?p.size+' sqft':'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Floor</span><span class="preview-val">${p.floor||'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">MRT</span><span class="preview-val">${p.mrt||'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Available</span><span class="preview-val">${p.available||'—'}</span></div>
+      <div class="preview-row" style="border:none;"><span class="preview-key">Furnishing</span><span class="preview-val">${p.furnishing||'—'}</span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn-green" onclick="confirmImport()">+ Add to My Listings</button>
+      <button class="btn btn-ghost btn-sm" onclick="S.importPreview=null;render()">Try Again</button>
+    </div>`:""}
+  </div></div>`;
+}
+
+// ── MANUAL ADD SHEET ──────────────────────────────────────────────
+
+// ─── URL FETCHER — calls server API to fetch PropertyGuru/99.co ───
+async function runUrlImport(){
+  const url=(document.getElementById("importUrlInput")||{}).value||S.importUrl||"";
+  if(!url||!url.startsWith("http")){
+    S.importStatus="⚠ Please paste a valid URL from PropertyGuru or 99.co.";
+    S.importStatusType="error";render();return;
+  }
+  S.importUrl=url;
+  S.importStatus="loading";S.importStatusType="loading";S.importPreview=null;render();
+  try{
+    const apiUrl="/api/fetch-listing?url="+encodeURIComponent(url);
+    const res=await fetch(apiUrl);
+    const data=await res.json();
+    if(!res.ok||data.error){throw new Error(data.error||"Failed to fetch");}
+    S.importPreview=data;
+    S.importStatus="";S.importStatusType="";
+  }catch(e){
+    S.importStatus="⚠ Could not fetch listing. Try Manual Entry instead.";
+    S.importStatusType="error";
+  }
+  render();
+}
+
+// Keep for backward compat
+async function runImport(){ runUrlImport(); }
+function runTextImport(){ runUrlImport(); }
+
+function confirmImport(){
+  const p=S.importPreview; if(!p) return;
+  const id="L"+(S.listings.length+Date.now());
+  S.listings.push({
+    id,source:p.source||"PropertyGuru",title:p.title,address:p.address,
+    rooms:+p.rooms||3,baths:+p.baths||2,size:+p.size||900,price:+p.price||4000,
+    floor:+p.floor||5,furnishing:p.furnishing||"Fully Furnished",mrt:p.mrt||"—",
+    available:p.available||"Immediate",emoji:emojiForType(p.type),
+    tags:p.tags||[],status:"shortlisted",added:new Date().toISOString().split("T")[0],
+    agentNote:"",myNote:""
+  });
+  S.showImport=false;S.importPreview=null;S.importUrl="";S.importStatus="";
+  S.tab="listings";S.filterStatus="all";
+  render();
+}
+
+function setManual(k,v){S.manual={...S.manual,[k]:v};}
+function confirmManual(){
+  const m=S.manual||{};
+  if(!m.title||!m.price){alert("Title and price are required.");return;}
+  const id="L"+(S.listings.length+Date.now());
+  S.listings.push({
+    id,source:m.source||"PropertyGuru",title:m.title,address:m.address||"",
+    rooms:+m.rooms||3,baths:+m.baths||2,size:+m.size||900,price:+m.price||4000,
+    floor:+m.floor||5,furnishing:m.furnishing||"",mrt:m.mrt||"",
+    available:m.available||"Immediate",emoji:emojiForType(m.type||"Condo"),
+    tags:[],status:"shortlisted",added:new Date().toISOString().split("T")[0],
+    agentNote:"",myNote:""
+  });
+  S.showImport=false;S.tab="listings";render();
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────────────
+function goTab(t){S.tab=t;if(t!=="listings")S.detailId=null;S.noteEditing=null;render();}
+function setFilter(s){S.filterStatus=s;render();}
+function setSort(s){S.sortBy=s;render();}
+function openDetail(id){S.detailId=id;S.tab="listings";S.noteEditing=null;render();}
+function closeDetail(){S.detailId=null;render();}
+function openPending(){S.showPending=true;render();}
+function closePending(){S.showPending=false;render();}
+function openImport(){S.showImport=true;S.importPreview=null;S.importStatus="";S.importUrl="";S.importMode="url";S.manual={source:"PropertyGuru"};render();}
+function closeImport(){S.showImport=false;render();}
+function doSync(){S.syncing=true;render();setTimeout(()=>{S.syncing=false;render();},1800);}
+function updateStatus(id,status){S.listings=S.listings.map(l=>l.id===id?{...l,status}:l);render();}
+function addToList(id){
+  const apt=S.pending.find(p=>p.id===id);if(!apt)return;
+  S.listings.push({...apt,status:"shortlisted",added:new Date().toISOString().split("T")[0],agentNote:"",myNote:""});
+  S.pending=S.pending.filter(p=>p.id!==id);
+  if(S.pending.length===0)S.showPending=false;render();
+}
+function skipPending(id){S.pending=S.pending.filter(p=>p.id!==id);if(S.pending.length===0)S.showPending=false;render();}
+function startNote(id){S.noteEditing=id;S.noteText=detail()?.myNote||"";render();}
+function cancelNote(){S.noteEditing=null;render();}
+function saveNote(id){const t=$("nt")?.value||S.noteText;S.listings=S.listings.map(l=>l.id===id?{...l,myNote:t}:l);S.noteEditing=null;render();}
+function startVNote(id){S.viewingNote={id,text:""};render();}
+function cancelVNote(){S.viewingNote={id:null,text:""};render();}
+function saveVNote(id){const t=$("vnt")?.value||S.viewingNote.text;S.viewings=S.viewings.map(v=>v.id===id?{...v,notes:t,status:"completed"}:v);S.viewingNote={id:null,text:""};render();}
+function setNV(k,v){S.newViewing={...S.newViewing,[k]:v};}
+function addViewing(lid){
+  const nv=S.newViewing;if(!nv.date||!nv.time){alert("Please pick a date and time.");return;}
+  const p=S.listings.find(l=>l.id===lid);
+  S.viewings.push({id:S.viewings.length+1,lid,title:p?.title||"",date:nv.date,time:nv.time,status:"upcoming",notes:"",who:nv.who});
+  S.listings=S.listings.map(l=>l.id===lid?{...l,status:"viewing_scheduled"}:l);
+  S.newViewing={date:"",time:"",who:"both"};render();
+}
+function toggleReqEdit(){S.req.editing=!S.req.editing;render();}
+function setR(k,v){S.req={...S.req,[k]:v};}
+function toggleD(d){S.req.districts=S.req.districts.includes(d)?S.req.districts.filter(x=>x!==d):[...S.req.districts,d];render();}
+function toggleT(t){S.req.types=S.req.types.includes(t)?S.req.types.filter(x=>x!==t):[...S.req.types,t];render();}
+
+render();
+</script>
+</body>
+</html>
