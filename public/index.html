@@ -436,13 +436,14 @@ function renderImportSheet(){
 
     ${p?`
     <div style="font-size:13px;font-weight:700;color:#4ade80;margin:16px 0 10px;">✅ Fetched — check and confirm:</div>
+    <div style="font-size:12px;color:#f59e0b;background:#2a1f00;border-radius:8px;padding:10px 12px;margin-bottom:12px;">⚠ PropertyGuru blocks automated access — name and type were extracted from the URL. Please fill in <strong>Price</strong> and <strong>Size</strong> manually.</div>
     <div class="preview-card">
       <div class="preview-row"><span class="preview-key">Title</span><span class="preview-val">${p.title}</span></div>
       <div class="preview-row"><span class="preview-key">Address</span><span class="preview-val">${p.address||'—'}</span></div>
-      <div class="preview-row"><span class="preview-key">Price</span><span class="preview-val" style="color:#4ade80;">${p.price?fmt(p.price)+"<span style='font-size:11px;color:#555;'>/mo</span>":'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Price (SGD/mo)</span><span class="preview-val"><input type="number" class="input" placeholder="e.g. 5500" value="${p.price||''}" oninput="S.importPreview.price=+this.value" style="font-size:14px;padding:8px 10px;background:#111;border:1px solid #3a3a3a;border-radius:8px;color:#4ade80;width:130px;text-align:right;"/></span></div>
       <div class="preview-row"><span class="preview-key">Type</span><span class="preview-val">${p.type||'—'}</span></div>
       <div class="preview-row"><span class="preview-key">Bedrooms</span><span class="preview-val">${p.rooms}BR / ${p.baths}Bath</span></div>
-      <div class="preview-row"><span class="preview-key">Size</span><span class="preview-val">${p.size?p.size+' sqft':'—'}</span></div>
+      <div class="preview-row"><span class="preview-key">Size (sqft)</span><span class="preview-val"><input type="number" class="input" placeholder="e.g. 1100" value="${p.size||''}" oninput="S.importPreview.size=+this.value" style="font-size:14px;padding:8px 10px;background:#111;border:1px solid #3a3a3a;border-radius:8px;color:#fff;width:130px;text-align:right;"/></span></div>
       <div class="preview-row"><span class="preview-key">Floor</span><span class="preview-val">${p.floor||'—'}</span></div>
       <div class="preview-row"><span class="preview-key">MRT</span><span class="preview-val">${p.mrt||'—'}</span></div>
       <div class="preview-row"><span class="preview-key">Available</span><span class="preview-val">${p.available||'—'}</span></div>
